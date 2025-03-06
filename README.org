@@ -1,0 +1,326 @@
+#+TITLE: Professional Org Mode Workflow System  
+#+AUTHOR: baoca  
+#+DATE: 2025-03-06
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+STARTUP: overview indent  
+#+OPTIONS: toc:3 num:3  
+
+* Introduction  
+
+This is a comprehensive Org mode system for managing professional work over the long term. It provides structure for tracking projects, tasks, meetings, and reference information while preventing file bloat through strategic organization and archiving.  
+
+The system is designed with these principles in mind:  
+- Separation of concerns (different types of information in different files)  
+- Clear navigation between related items  
+- Efficient agenda generation  
+- Sustainable long-term growth  
+- Professional task and project management  
+
+* System Overview  
+
+** File Structure  
+#+BEGIN_SRC text  
+~/org/  
+  ├── work.org         # Main dashboard with high-level projects/goals  
+  ├── projects/        # Directory for project-specific files  
+  │   ├── project1.org  
+  │   ├── project2.org  
+  │   └── ...  
+  ├── archive/         # Archive directory for completed work  
+  │   ├── 2025-Q1.org  
+  │   └── completed-project-xyz.org  
+  ├── reference.org    # People, resources, templates  
+  ├── meetings.org     # Meeting notes  
+  ├── journal.org      # Daily work journal  
+  └── .dir-locals.el   # Local Emacs configuration  
+#+END_SRC  
+
+** Key Files and Their Purpose  
+
+- =work.org= :: Your central dashboard and quick-access file  
+- =projects/= :: Dedicated files for detailed project information  
+- =meetings.org= :: Chronological record of all meeting notes  
+- =reference.org= :: Static information, contacts, and templates  
+- =journal.org= :: Daily work log and personal notes  
+- =archive/= :: Storage for completed projects and tasks  
+
+* Setup and Configuration  
+
+** Initial Setup  
+
+1. Run the setup script to create the file structure  
+2. Ensure your Emacs configuration includes the necessary Org mode settings:  
+
+#+BEGIN_SRC elisp  
+;; Add the org files to agenda  
+(setq org-agenda-files '("~/org/work.org"  
+                         "~/org/projects"  
+                         "~/org/meetings.org"))  
+
+;; Define custom TODO keywords  
+(setq org-todo-keywords  
+      '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "DELEGATED(d)" "|" "DONE(x)" "CANCELLED(c)")))  
+
+;; Set up archiving destination  
+(setq org-archive-location "~/org/archive/%s_archive::datetree/")  
+
+;; Configure tags  
+(setq org-tag-alist '(("@office" . ?o)  
+                      ("@home" . ?h)  
+                      ("@meeting" . ?m)  
+                      ("@phone" . ?p)  
+                      ("@email" . ?e)  
+                      ("@urgent" . ?u)  
+                      ("PROJECT" . ?P)))  
+#+END_SRC  
+
+** Recommended Capture Templates  
+
+These capture templates streamline adding new items to the correct locations:  
+
+#+BEGIN_SRC elisp  
+(setq org-capture-templates  
+      '(("t" "Task" entry  
+         (file+headline "~/org/work.org" "Tasks")  
+         "* TODO %^{Task}\nSCHEDULED: %^t\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?")  
+        
+        ("p" "Project" entry  
+         (file+headline "~/org/work.org" "Active Projects")  
+         "* PROJECT %^{Project name}\n:PROPERTIES:\n:CREATED: %U\n:OWNER: %^{Owner}\n:STATUS: %^{Status|Planning|Active|On Hold}\n:END:\n%?\n\n[[file:projects/%\\1.org][Project Details]]")  
+        
+        ("n" "New Project File" plain  
+         (file "~/org/projects/${slug}.org")  
+         (file "~/org/reference.org::* Templates/Project Templates/New Project Template"))  
+        
+        ("m" "Meeting" entry  
+         (file+datetree "~/org/meetings.org")  
+         "* %^{Meeting title} %^g\nSCHEDULED: %^T\n:PROPERTIES:\n:PARTICIPANTS: %^{Participants}\n:END:\n\n** Agenda\n\n** Notes\n\n** Action Items\n\n")  
+        
+        ("j" "Journal" entry  
+         (file+olp+datetree "~/org/journal.org")  
+         "* %<%H:%M> %^{Title}\n%?")))  
+#+END_SRC  
+
+* Daily Workflow  
+
+** Morning Routine  
+1. Open your agenda with =C-c a a= to see today's tasks and deadlines  
+2. Review and prioritize items for the day  
+3. Check your journal for yesterday's unfinished items  
+
+** Throughout the Day  
+1. Use =C-c c= to capture new tasks, meetings, and notes  
+2. Track time with =C-c C-x C-i= (clock in) and =C-c C-x C-o= (clock out)  
+3. Mark completed tasks as DONE with =C-c C-t d=  
+4. Refile items to appropriate locations with =C-c C-w=  
+
+** End of Day  
+1. Review completed and incomplete tasks  
+2. Make a journal entry in =journal.org= with reflections and plans  
+3. Schedule any unfinished tasks for future dates  
+
+* Managing Projects  
+
+** Creating a New Project  
+
+1. Capture a new project entry in =work.org= (=C-c c p=)  
+2. Create the dedicated project file (=C-c c n=)  
+3. Add detailed structure in the project file:  
+   - Background and objectives  
+   - Breakdown of tasks and phases  
+   - Stakeholders and resources  
+   - Related meetings  
+
+** Project Tracking  
+
+Each project has two components:  
+1. A high-level entry in =work.org= showing overall status  
+2. A dedicated file in =projects/= with detailed information  
+
+Use properties to track important metadata:  
+#+BEGIN_SRC org  
+:PROPERTIES:  
+:OWNER:     Team or individual responsible  
+:DEADLINE:  <YYYY-MM-DD>  
+:STATUS:    Planning/Active/Complete/On Hold  
+:PRIORITY:  A/B/C  
+:CREATED:   <timestamp>  
+:END:  
+#+END_SRC  
+
+** Linking Projects and Tasks  
+
+Cross-reference related items using Org links:  
+- Use file links: =[[file:projects/project-name.org][Project Details]]=  
+- Use ID links for specific headings: =[[id:UUID][Item Description]]=  
+  - Create IDs with =org-id-get-create= (=C-c l=)  
+
+* Meeting Management  
+
+** Preparing for Meetings  
+1. Schedule the meeting in =meetings.org=  
+2. Create an agenda outline  
+3. Link to relevant project files  
+
+** During Meetings  
+1. Take notes directly in the scheduled meeting entry  
+2. Capture action items as TODO items  
+3. Use =C-c C-c= to add tags for easy filtering  
+
+** After Meetings  
+1. Process action items:  
+   - Assign to appropriate people  
+   - Set deadlines  
+   - Link to relevant projects  
+2. Send meeting summary if needed (use template from =reference.org=)  
+
+* Effective Searching and Navigation  
+
+** Agenda Views  
+- =C-c a a= :: Standard agenda view  
+- =C-c a t= :: TODO list of all items  
+- =C-c a m= :: Match items by tags, properties, or content  
+- =C-c a s= :: Search agenda files  
+
+Custom agenda commands for focused views:  
+#+BEGIN_SRC elisp  
+(setq org-agenda-custom-commands  
+      '(("p" "Projects" tags "PROJECT"  
+         ((org-agenda-sorting-strategy '(priority-down))))  
+        ("n" "Next Actions" todo "NEXT"  
+         ((org-agenda-sorting-strategy '(priority-down))))  
+        ("w" "Waiting For" todo "WAITING")))  
+#+END_SRC  
+
+** Fast Navigation  
+- Use =C-c C-o= (=org-open-at-point=) to follow links  
+- Use =C-u C-c C-w= to jump to recently refiled locations  
+- Create sparse trees with =C-c /= to see only matching items  
+- Use =org-goto= (=C-c C-j=) to jump to headings  
+
+* System Maintenance  
+
+** Weekly Maintenance  
+1. Review and update project statuses  
+2. Process WAITING items that need follow-up  
+3. Archive completed tasks with =C-c C-x C-a=  
+
+** Monthly Maintenance  
+1. Archive completed projects to =archive/=  
+2. Review Someday/Maybe items for relevance  
+3. Check that all tasks have appropriate scheduling or deadlines  
+
+** Quarterly Review  
+1. Evaluate overall system organization  
+2. Review archived items for patterns and insights  
+3. Update templates based on changing needs  
+
+* Advanced Usage  
+
+** Task Dependencies  
+Use the =ORDERED= property to create sequential tasks:  
+#+BEGIN_SRC org  
+* Tasks for Project X  
+  :PROPERTIES:  
+  :ORDERED:  t  
+  :END:  
+** TODO First task  
+** TODO Second task (blocked until first is complete)  
+** TODO Third task (blocked until second is complete)  
+#+END_SRC  
+
+** Effort Estimation and Time Tracking  
+1. Add =:Effort:= property to tasks: =:Effort: 2h=  
+2. Use the clock system to track actual time:  
+   - =C-c C-x C-i= :: Start the clock  
+   - =C-c C-x C-o= :: Stop the clock  
+   - =C-c C-x C-r= :: Create a clock report  
+
+** Custom Views with Org QL  
+If installed, use =org-ql= for powerful dynamic views:  
+#+BEGIN_SRC elisp  
+(org-ql-search  
+ (org-agenda-files)  
+ '(and (todo "NEXT")  
+       (priority "A")  
+       (tags "urgent"))  
+ :title "High Priority Urgent Next Actions")  
+#+END_SRC  
+
+* Customization Options  
+
+** Adapting to Your Workflow  
+The system is designed to be flexible. Common customizations include:  
+
+1. Modifying TODO states to match your process  
+2. Adding custom properties for your domain  
+3. Creating specialized capture templates  
+4. Adjusting file organization for your needs  
+
+** Adding New File Types  
+Depending on your work, you might add:  
+- =clients/= directory for client-specific files  
+- =areas/= directory for ongoing responsibility areas  
+- =knowledge/= directory for long-term reference material  
+
+* Troubleshooting  
+
+** Common Issues  
+- *Large agenda files*: Use property or tag filters to focus views  
+- *Slow agenda generation*: Review which files are in =org-agenda-files=  
+- *Lost tasks*: Use =org-search-view= with broad criteria to find them  
+- *Inconsistent state*: Set up =org-enforce-todo-dependencies= and =org-enforce-todo-checkbox-dependencies=  
+
+** Getting Help  
+- Built-in documentation: =C-h i m Org mode RET=  
+- Org manual: https://orgmode.org/manual/  
+- Org mode mailing list: https://orgmode.org/community.html  
+
+* Appendix  
+
+** Key Bindings Reference  
+| Binding     | Command                  | Description                   |
+|-------------+--------------------------+-------------------------------|
+| =C-c a=     | org-agenda               | Access agenda dispatcher      |
+| =C-c c=     | org-capture              | Capture new items             |
+| =C-c C-t=   | org-todo                 | Change TODO state             |
+| =C-c C-s=   | org-schedule             | Schedule an item              |
+| =C-c C-d=   | org-deadline             | Set a deadline                |
+| =C-c C-w=   | org-refile               | Refile an item                |
+| =C-c C-x a= | org-archive-subtree      | Archive current subtree       |
+| =C-c /=     | org-sparse-tree          | Create a sparse tree          |
+| =C-c C-o=   | org-open-at-point        | Open link at point            |
+| =C-c C-x i= | org-clock-in             | Start clock on current item   |
+| =C-c C-x o= | org-clock-out            | Stop current clock            |
+| =C-c C-x r= | org-clock-report         | Insert a clock report         |
+| =C-c C-j=   | org-goto                 | Jump to heading               |
+| =C-c [=     | org-agenda-file-to-front | Add file to agenda files      |
+| =C-c ]=     | org-remove-file          | Remove file from agenda files |
+
+** Template Examples  
+
+*** Email Templates Example  
+#+BEGIN_SRC org  
+** Project Status Update  
+   Subject: [Project] Status Update - Week of %<%Y-%m-%d>  
+   
+   Hi {Name},  
+   
+   Here's the current status of the {Project} project as of %<%Y-%m-%d>:  
+   
+   Progress:  
+   - {Major accomplishment}  
+   - {Current task}  
+   
+   Next Steps:  
+   - {Upcoming task}  
+   - {Milestone}  
+   
+   Issues/Risks:  
+   - {Any issues or risks}  
+   
+   Please let me know if you have any questions.  
+   
+   Best regards,  
+   {Your Name}  
+#+END_SRC  
